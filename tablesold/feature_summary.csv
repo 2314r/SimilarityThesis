@@ -1,0 +1,8 @@
+Feature,Category
+mass,Technical
+volume,Technical
+edge_count,Technical
+face_count,Technical
+component_count,Structural
+joint_count,Structural
+body_count,Structural
