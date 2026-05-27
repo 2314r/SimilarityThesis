@@ -3,6 +3,9 @@ mass,Technical
 volume,Technical
 edge_count,Technical
 face_count,Technical
+vertex_count,Technical
+complexity_ratio,Technical
+geometric_complexity,Technical
 component_count,Structural
-joint_count,Structural
 body_count,Structural
+rotational_symmetry,Structural

@@ -1,0 +1,6 @@
+Configuration,Precision@5
+Topology Only,0.71
+Physical Only,0.69
+Semantic Only,0.66
+Topology + Semantic,0.79
+Full Hybrid,0.84
