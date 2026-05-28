@@ -1,0 +1,26 @@
+Method,Family,n,P@5,MRR
+Technical,simple_rotor,246,0.9602,0.9769
+Technical,symmetric_rotor,71,0.7042,0.9051
+Technical,complex_assembly,61,0.5049,0.7742
+Technical,medium_rotor,242,0.8983,0.9376
+Technical,high_complexity_rotor,126,0.6651,0.8265
+Semantic (Ontology),simple_rotor,246,1.0,1.0
+Semantic (Ontology),symmetric_rotor,71,0.9718,1.0
+Semantic (Ontology),complex_assembly,61,0.3148,0.3661
+Semantic (Ontology),medium_rotor,242,1.0,1.0
+Semantic (Ontology),high_complexity_rotor,126,0.7762,0.9907
+Structural,simple_rotor,246,0.4122,0.796
+Structural,symmetric_rotor,71,0.4479,0.6249
+Structural,complex_assembly,61,0.3311,0.5161
+Structural,medium_rotor,242,0.4298,0.5722
+Structural,high_complexity_rotor,126,0.3794,0.5194
+Hybrid,simple_rotor,246,1.0,1.0
+Hybrid,symmetric_rotor,71,0.9859,1.0
+Hybrid,complex_assembly,61,0.7115,0.8447
+Hybrid,medium_rotor,242,0.9975,1.0
+Hybrid,high_complexity_rotor,126,0.8635,0.9336
+Euclidean,complex_assembly,61,0.7869,0.9016
+Euclidean,high_complexity_rotor,126,0.9127,0.9749
+Euclidean,medium_rotor,242,0.9975,0.9969
+Euclidean,simple_rotor,246,1.0,1.0
+Euclidean,symmetric_rotor,71,0.9803,1.0

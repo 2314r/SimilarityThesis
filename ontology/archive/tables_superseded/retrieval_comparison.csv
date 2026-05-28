@@ -1,0 +1,4 @@
+Method,Precision@3,Precision@5,Precision@10,MRR
+Technical,0.8861,0.8606,0.8256,0.9422
+Ontology,0.9987,0.9984,0.9977,0.9993
+Hybrid,0.9987,0.9968,0.9917,0.9993

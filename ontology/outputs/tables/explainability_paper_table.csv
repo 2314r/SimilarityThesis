@@ -1,0 +1,8 @@
+Example,Query Family,Retrieved Family,Correct,Hybrid Score,β×Sem (0.2),γ×Struct (0.8),hasMaterial,hasTopology,hasComplexityLevel,hasStructure,Ontology Matches,Dominant Component
+"Ex.1 — Simple Rotor (correct, 4/4 match)",simple_rotor,simple_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Sparse),✓  (Low),✓  (Symmetric),4/4,Structural
+Ex.2 — Medium Rotor (correct),medium_rotor,medium_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Asymmetric),4/4,Structural
+Ex.3 — Symmetric Rotor (correct),symmetric_rotor,symmetric_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Symmetric),4/4,Structural
+Ex.4 — High Complexity Rotor (correct),high_complexity_rotor,high_complexity_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
+Ex.5 — Complex Assembly (correct),complex_assembly,complex_assembly,✓,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
+Ex.6 — FAILURE: Complex↔HighComplexity,complex_assembly,high_complexity_rotor,✗,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
+Ex.7 — FAILURE: HighComplexity↔Complex,high_complexity_rotor,complex_assembly,✗,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural

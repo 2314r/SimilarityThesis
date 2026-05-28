@@ -1,0 +1,3 @@
+Component,Weight,Features
+Technical Similarity,0.6,"mass, volume, edge_count, face_count, vertex_count, surface_area, complexity_ratio, geometric_complexity, component_count, body_count, rotational_symmetry"
+Ontology Similarity,0.4,"hasMaterial, belongsToFamily, hasTopology, hasComplexityLevel, hasStructure"

@@ -1,0 +1,4 @@
+Component,Weight,Features
+Technical,0.0,"volume, edge_count, face_count, vertex_count, complexity_ratio, geometric_complexity"
+Semantic,0.2,"material_class, topology_class, complexity_class, structure_class"
+Structural,0.8,"component_count, body_count, rotational_symmetry"

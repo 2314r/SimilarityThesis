@@ -1,0 +1,6 @@
+Metric,Value
+Assemblies,746.0
+Mean Ontology Similarity,0.3860819814704339
+Max Ontology Similarity,1.0
+Min Ontology Similarity,0.0
+Top-K Retrieval,5.0

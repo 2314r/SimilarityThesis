@@ -1,0 +1,3 @@
+Comparison,Delta_P@3,Delta_P@5,Delta_P@10,Delta_MRR
+Hybrid vs Technical,0.1126,0.1362,0.1661,0.0571
+Hybrid vs Ontology,0.0,-0.0016,-0.006,0.0
