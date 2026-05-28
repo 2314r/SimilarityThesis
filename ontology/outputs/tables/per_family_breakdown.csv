@@ -19,8 +19,8 @@ Hybrid,symmetric_rotor,71,0.9859,1.0
 Hybrid,complex_assembly,61,0.7115,0.8447
 Hybrid,medium_rotor,242,0.9975,1.0
 Hybrid,high_complexity_rotor,126,0.8635,0.9336
-Euclidean,complex_assembly,61,0.7869,0.9016
-Euclidean,high_complexity_rotor,126,0.9127,0.9749
-Euclidean,medium_rotor,242,0.9975,0.9969
-Euclidean,simple_rotor,246,1.0,1.0
-Euclidean,symmetric_rotor,71,0.9803,1.0
+Euclidean,complex_assembly,61,0.7475,0.8893
+Euclidean,high_complexity_rotor,126,0.8349,0.9414
+Euclidean,medium_rotor,242,0.8372,0.9164
+Euclidean,simple_rotor,246,0.8789,0.9547
+Euclidean,symmetric_rotor,71,0.8225,0.9103
