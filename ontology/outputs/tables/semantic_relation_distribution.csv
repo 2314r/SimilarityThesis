@@ -1,9 +1,7 @@
-Predicate,Count
+Relation,Count
 rdf:type,746
 hasMaterial,746
 belongsToFamily,746
 hasComplexityLevel,746
 hasTopology,746
 hasStructure,746
-hasMassCategory,746
-hasVolumeCategory,746

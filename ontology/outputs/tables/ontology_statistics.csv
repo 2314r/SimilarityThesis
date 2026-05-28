@@ -1,13 +1,7 @@
 Metric,Value
-Total Instance Triples,5968
-Total Hierarchy Triples,21
-Total Ontology Triples,5989
-Assembly Instances,746
-Ontology Classes (Assembly),5
-Ontology Classes (Material),6
-Ontology Classes (Feature),3
-Total Ontology Classes,14
-Semantic Predicates,8
-Unique Object Values,29
-Unique Nodes (full graph),802
-Ontology Predicate Coverage,8 / 8
+Total Triples,4476
+Unique Nodes,769
+Unique Predicates,6
+Assemblies,746
+Material Classes,147
+Family Classes,5

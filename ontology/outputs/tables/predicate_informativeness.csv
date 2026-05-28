@@ -1,9 +1,7 @@
 Predicate,Unique Values,Shannon Entropy,Most Common Value,Coverage
-rdf:type,5,2.1063,SimpleRotor,746
 belongsToFamily,5,2.1063,simple_rotor,746
-hasTopology,3,1.5584,Moderate,746
 hasComplexityLevel,3,1.5539,Medium,746
-hasMassCategory,3,1.5235,LightWeight,746
-hasVolumeCategory,3,1.4987,MediumVolume,746
-hasStructure,2,0.8207,Asymmetric,746
 hasMaterial,5,0.7313,Steel,746
+hasStructure,2,0.8207,Asymmetric,746
+hasTopology,3,1.5584,Moderate,746
+rdf:type,5,2.1063,SimpleRotor,746

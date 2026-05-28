@@ -3,29 +3,19 @@ Q1 - Same material and topology,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
 SELECT ?assembly ?material ?topology ?family
 WHERE {
     ?assembly rdf:type ?family .
-    ?assembly ex:hasMaterial ex:Steel .
-    ?assembly ex:hasTopology ex:Sparse .
-    ?assembly ex:belongsToFamily ?fam .
-    BIND(ex:Steel AS ?material)
-    BIND(ex:Sparse AS ?topology)
-    FILTER(?assembly != ex:21448_5646a1b6)
-}
-LIMIT 10",10
-Q2 - Count by family,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?family (COUNT(?assembly) AS ?count)
-WHERE {
-    ?familyClass rdfs:subClassOf ex:EngineeringAssembly .
-    ?assembly rdf:type ?familyClass .
-    BIND(STR(?familyClass) AS ?family)
-}
-GROUP BY ?family
-ORDER BY DESC(?count)",5
-Q3 - Same complexity+structure,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
-SELECT ?assembly ?complexity ?structure
-WHERE {
-    ?assembly ex:hasComplexityLevel ex:Low .
-    ?assembly ex:hasStructure ex:Symmetric .
-    FILTER(?assembly != ex:21448_5646a1b6)
-}
-LIMIT 5",5
+    ?assembly ex:hasMaterial ?material .
+    ?assembly ex:hasTopology ?topology .
+}",746
+Q2 - High complexity assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly ex:hasComplexityLevel ""High"" .
+}",187
+Q3 - Symmetric assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly ex:hasStructure ""Symmetric"" .
+}",191
+Q4 - Steel simple rotors,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly rdf:type ex:SimpleRotor .
+    ?assembly ex:hasMaterial ""Steel"" .
+}",211

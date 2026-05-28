@@ -1,9 +1,7 @@
 Predicate,Triple Count,Unique Values,Value List
-rdf:type,746,5,"ComplexAssembly, HighComplexityRotor, MediumRotor, SimpleRotor, SymmetricRotor"
-hasMaterial,746,5,"Aluminum, OtherEngineeringMaterial, Plastic, Steel, Wood"
 belongsToFamily,746,5,"complex_assembly, high_complexity_rotor, medium_rotor, simple_rotor, symmetric_rotor"
 hasComplexityLevel,746,3,"High, Low, Medium"
-hasTopology,746,3,"Dense, Moderate, Sparse"
+hasMaterial,746,5,"Aluminum, OtherEngineeringMaterial, Plastic, Steel, Wood"
 hasStructure,746,2,"Asymmetric, Symmetric"
-hasMassCategory,746,3,"HeavyWeight, LightWeight, MediumWeight"
-hasVolumeCategory,746,3,"LargeVolume, MediumVolume, SmallVolume"
+hasTopology,746,3,"Dense, Moderate, Sparse"
+rdf:type,746,5,"ComplexAssembly, HighComplexityRotor, MediumRotor, SimpleRotor, SymmetricRotor"

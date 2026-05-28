@@ -1,12 +1,6 @@
 Metric,Value
-Total Nodes,789.0
-Total Edges,5989.0
-Assembly Instance Nodes,746.0
-Class / Value Nodes,35.0
-Graph Density,0.019266
-Weakly Connected Components,2.0
-Average In-Degree,7.5906
-Average Out-Degree,7.5906
-Max Out-Degree,8.0
-Max In-Degree,661.0
-Unique Predicates,9.0
+Total Nodes,769.0
+Total Edges,4476.0
+Graph Density,0.015158
+Connected Components,1.0
+Average Degree,11.6411
