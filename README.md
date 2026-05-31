@@ -1,175 +1,136 @@
 # Machine Learning Algorithms for Assessing the Similarity of Variant Rotor Designs Based on Ontological Features
 
-## 📌 Overview
+## Overview
 
-This project implements a hybrid similarity assessment framework for comparing rotor design variants. The approach integrates:
-
-- Technical features (numerical properties such as diameter, speed, mass)
-- Semantic features (ontology-inspired attributes such as function and components)
-- Structural features (component relationships and topology)
-
-The objective is to demonstrate that a hybrid similarity model outperforms single-domain similarity methods in engineering design comparison.
+This project implements a hybrid similarity assessment framework for CAD assemblies, combining technical, semantic, and structural knowledge within an ontology-based pipeline. The framework is evaluated on 746 Fusion 360 assemblies extracted from the Autodesk open-source repository.
 
 ---
 
-## 🎯 Research Objectives
+## Research Objectives
 
-The implementation addresses the following research questions:
-
-- RQ1: How can rotor designs be represented using ontology-based features?
-- RQ2: Which similarity metrics are most suitable?
-- RQ3: Can machine learning models learn similarity relationships?
-- RQ4: Does a hybrid similarity approach outperform single-domain methods?
-- RQ5: How can similarity support engineering decision-making?
+- RQ1: How can CAD assemblies be represented using ontology-based features?
+- RQ2: Which similarity metrics are most suitable for assembly retrieval?
+- RQ3: Does a hybrid similarity approach outperform single-domain methods?
+- RQ4: How can ontological knowledge support explainable engineering decisions?
 
 ---
 
-## 🧠 Methodology
+## Methodology
 
 ### Feature Representation
 
-Each rotor variant is represented using three feature categories:
+| Feature Type | Description | Features |
+|---|---|---|
+| Technical | Geometric properties of the assembly | component_count, body_count, edge_count, face_count, vertex_count, mass, volume, geometric_complexity, complexity_ratio, rotational_symmetry |
+| Semantic | Ontology-encoded material knowledge | material one-hot encoding (Steel, Aluminum, Plastic, Brass) |
+| Structural | Assembly contact topology | n_contacts, n_holes, n_occurrences |
 
-| Feature Type  | Description | Example |
-|--------------|------------|--------|
-| Technical     | Numerical physical properties | diameter, speed |
-| Semantic      | Functional / ontology features | motor, magnet |
-| Structural    | Component relationships | number of components |
+### Hybrid Similarity Model
 
----
+```
+S_hybrid = α · S_technical + β · S_semantic + γ · S_structural
+```
 
-### Similarity Methods
+Empirically optimised weights: **α = 0.90, β = 0.10, γ = 0.00**
 
-The following similarity approaches are implemented:
+### Ground-Truth Labels
 
-- Cosine Similarity (technical features)
-- Jaccard Similarity (semantic features)
-- Structural Similarity (cosine on structural features)
-- Hybrid Similarity Model:
+Five contact-topology families derived from assembly JSON files (independent of geometric features):
 
-[
-S_{hybrid} = \alpha S_{semantic} + \beta S_{technical} + \gamma S_{structural}
-]
+| Family | Count |
+|---|---|
+| topo_isolated | 128 |
+| topo_minimal | 134 |
+| topo_moderate | 174 |
+| topo_connected | 154 |
+| topo_complex | 156 |
 
----
-
-### Evaluation Metrics
-
-- Precision@K (K = 3, 5, 10)
-- Mean Reciprocal Rank (MRR)
-- ROC-AUC (for ML models)
+Independence verified: Decision Tree accuracy on geometric features = 40.7% vs. 23.3% chance level.
 
 ---
 
-## 📊 Results Summary
+## Results Summary
 
-### Similarity Performance
+### Retrieval Performance
 
-| Method       | Precision@5 | Precision@10 | MRR |
-|-------------|------------|--------------|-----|
-| Technical    | 0.25       | 0.25         | 0.49 |
-| Semantic     | 0.48       | 0.49         | 0.70 |
-| Structural   | 0.51       | 0.47         | 0.75 |
-| Hybrid   | 0.83   | 0.63     | 0.996 |
+| Method | P@5 | MRR |
+|---|---|---|
+| **Hybrid (α=0.90, β=0.10, γ=0.00)** | **0.354** | **0.5731** |
+| Technical only | 0.362 | 0.5640 |
+| Semantic (ontology) | 0.307 | 0.5410 |
+| Structural | 0.274 | 0.4860 |
+| Euclidean baseline | 0.336 | 0.5350 |
+| Random baseline | — | 0.3920 |
+
+Bootstrap 95% CI for Hybrid MRR: **[0.5462, 0.5999]**
+
+All pairwise comparisons (Wilcoxon signed-rank): **p < 0.05**
 
 ### Key Findings
 
-- Hybrid similarity significantly outperforms individual methods
-- High MRR indicates excellent ranking quality
-- Semantic and structural features contribute strongly
-- Technical features alone are insufficient
+- Hybrid similarity achieves highest MRR (0.5731), outperforming all single-domain methods
+- Statistical significance confirmed for all comparisons (p < 0.05)
+- Robustness: Hybrid MRR degrades from 0.5731 to 0.4713 under 50% semantic noise, remaining above Semantic-only throughout
+- Bootstrap CI [0.5462–0.5999] lies entirely above the Semantic-only upper bound
+
+### Ontology
+
+- 746 assemblies encoded as OWL individuals
+- 4,476 RDF triples
+- Class hierarchy: TopoIsolated / TopoMinimal / TopoModerate / TopoConnected / TopoComplex → EngineeringAssembly
+- SPARQL-queryable knowledge graph for explainable retrieval
 
 ---
 
-### Machine Learning Models
+## Technologies
 
-| Model         | ROC-AUC |
-|--------------|--------|
-| k-NN          | 0.96   |
-| Random Forest | 1.00   |
-
-👉 The feature representation is highly learnable and discriminative.
+- Python, NumPy, Pandas, Scikit-learn, Matplotlib
+- rdflib (OWL/RDF ontology)
+- scipy (statistical tests)
 
 ---
 
-### Robustness (Missing Features)
-
-| Condition         | Precision@5 |
-|------------------|------------|
-| Full Data         | 0.83       |
-| Missing Features  | 0.81       |
-
-👉 The hybrid model remains stable under incomplete data.
-
----
-
-## 📈 Visualizations
-
-The project includes:
-
-- Precision@K comparison charts
-- Similarity matrix heatmaps
-- t-SNE embedding of rotor variants
-- Ranking examples
-
----
-
-## 🛠️ Technologies Used
-
-- Python
-- NumPy, Pandas
-- Scikit-learn
-- Matplotlib
-
----
-
-## ▶️ How to Run
+## How to Run
 
 1. Install dependencies:
-bash pip install numpy pandas scikit-learn matplotlib 
+```bash
+pip install numpy pandas scikit-learn matplotlib rdflib scipy
+```
 
-2. Run the notebook:
-bash jupyter notebook 
+2. Open and run the main notebook:
+```bash
+jupyter notebook ThesisV10.ipynb
+```
 
-3. Execute all cells sequentially.
-
----
-
-## 📂 Project Structure
-
-. ├── thesis.ipynb        # Main implementation ├── README.md           # Project documentation
+3. Execute all cells sequentially. Outputs are saved to `ontology/outputs/`.
 
 ---
 
-## 🧠 Key Contribution
+## Project Structure
 
-This project demonstrates that:
-
-> Combining semantic, technical, and structural knowledge leads to more accurate and robust similarity assessment in engineering design.
+```
+SimilarityThesis/
+├── ThesisV10.ipynb                    # Main canonical notebook
+├── ontology/
+│   ├── data/
+│   │   └── fusion360_independent_labels.csv   # Dataset (746 assemblies, 19 features)
+│   └── outputs/
+│       ├── figures/                   # 28 publication-quality figures
+│       ├── tables/                    # 31 result CSVs
+│       └── assembly_ontology.owl      # OWL ontology (4,476 triples)
+└── archive/                           # Superseded notebooks and datasets
+```
 
 ---
 
-## 📌 Author
+## Key Contribution
+
+> A hybrid ontology-based similarity framework combining geometric, semantic, and structural knowledge achieves statistically significant improvement in CAD assembly retrieval (MRR = 0.5731, 95% CI [0.5462, 0.5999]) over all single-domain baselines.
+
+---
+
+## Author
 
 Ulukbek Rahmanov  
 BSc Software Engineering  
 University of Europe for Applied Sciences
-
----
-
-## 📎 Notes
-
-- The ontology is implemented in a lightweight, feature-based form
-- No external OWL tools are required
-- All experiments are reproducible
-
----
-
-## 🚀 Future Work
-
-- Integration with real CAD datasets
-- Full OWL/RDF ontology implementation
-- Deep learning similarity models (Siamese networks)
-- Graph-based similarity using real topology
-
---
