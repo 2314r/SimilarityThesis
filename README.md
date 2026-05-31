@@ -12,6 +12,7 @@ This project implements a hybrid similarity assessment framework for CAD assembl
 - RQ2: Which similarity metrics are most suitable for assembly retrieval?
 - RQ3: Does a hybrid similarity approach outperform single-domain methods?
 - RQ4: How can ontological knowledge support explainable engineering decisions?
+- RQ5: How can similarity assessment support engineering decision-making?
 
 ---
 
