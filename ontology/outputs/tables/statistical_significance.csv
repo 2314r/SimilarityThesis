@@ -1,7 +1,7 @@
 Comparison,Hybrid_MRR,Other_MRR,Delta_MRR,Wilcoxon_stat,p_value,Significant,Cohen's_d,Effect_size
-Hybrid vs Random,0.9761,0.4963,0.4798,136708.5,3.39e-85,YES,1.2948,Large
-Hybrid vs Euclidean,0.9761,0.9304,0.0457,4292.0,4.70e-07,YES,0.2004,Small
-Hybrid vs Jaccard (raw),0.9761,0.4557,0.5204,172781.0,2.82e-95,YES,1.5749,Large
-Hybrid vs Technical,0.9761,0.9153,0.0607,5373.0,2.13e-10,YES,0.2553,Small
-Hybrid vs Structural,0.9761,0.6375,0.3386,77736.0,1.48e-67,YES,0.9787,Large
-Hybrid vs Semantic (Ontology),0.9761,0.9466,0.0295,2011.0,1.13e-05,YES,0.1581,Small
+Hybrid vs Random,0.5731,0.392,0.1811,150454.0,1.23e-20,YES,0.3642,Small
+Hybrid vs Euclidean,0.5731,0.5349,0.0382,88150.0,9.32e-03,YES,0.0876,Small
+Hybrid vs Jaccard (raw),0.5731,0.4244,0.1486,134181.5,1.62e-15,YES,0.3029,Small
+Hybrid vs Technical,0.5731,0.564,0.0091,28680.0,2.15e-02,YES,0.0383,Small
+Hybrid vs Structural,0.5731,0.4858,0.0873,118007.5,1.77e-06,YES,0.1753,Small
+Hybrid vs Semantic (Ontology),0.5731,0.5405,0.0325,89840.0,2.27e-02,YES,0.0742,Small

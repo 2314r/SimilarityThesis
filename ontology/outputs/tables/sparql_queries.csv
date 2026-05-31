@@ -18,4 +18,4 @@ Q4 - Steel simple rotors,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
 SELECT ?assembly WHERE {
     ?assembly rdf:type ex:SimpleRotor .
     ?assembly ex:hasMaterial ""Steel"" .
-}",211
+}",116

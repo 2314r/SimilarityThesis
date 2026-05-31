@@ -1,7 +1,7 @@
 Subject,Predicate,Object
-SimpleRotor,rdfs:subClassOf,EngineeringAssembly
-SymmetricRotor,rdfs:subClassOf,EngineeringAssembly
-MediumRotor,rdfs:subClassOf,EngineeringAssembly
-HighComplexityRotor,rdfs:subClassOf,EngineeringAssembly
-ComplexAssembly,rdfs:subClassOf,EngineeringAssembly
+TopoIsolated,rdfs:subClassOf,EngineeringAssembly
+TopoModerate,rdfs:subClassOf,EngineeringAssembly
+TopoMinimal,rdfs:subClassOf,EngineeringAssembly
+TopoConnected,rdfs:subClassOf,EngineeringAssembly
+TopoComplex,rdfs:subClassOf,EngineeringAssembly
 EngineeringAssembly,rdfs:subClassOf,owl:Thing

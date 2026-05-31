@@ -1,6 +1,6 @@
 Example,Query Family,Retrieved Family,Correct,Hybrid Score,β×Sem (0.2),γ×Struct (0.8),hasMaterial,hasTopology,hasComplexityLevel,hasStructure,Ontology Matches,Dominant Component
-Ex.1 — Simple Rotor (correct),simple_rotor,simple_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Sparse),✓  (Low),✓  (Symmetric),4/4,Structural
-Ex.2 — Medium Rotor (correct),medium_rotor,medium_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Asymmetric),4/4,Structural
-Ex.3 — Symmetric Rotor (correct),symmetric_rotor,symmetric_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Symmetric),4/4,Structural
-Ex.4 — High Complexity Rotor (correct),high_complexity_rotor,high_complexity_rotor,✓,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
-Ex.5 — Complex Assembly (wrong),complex_assembly,high_complexity_rotor,✗,1.0,0.2,0.8,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
+Ex.1 — Topo Isolated (wrong),topo_isolated,topo_minimal,✗,1.0,0.2,0.8,✓  (Steel),✓  (Sparse),✓  (Low),✓  (Asymmetric),4/4,Structural
+Ex.2 — Topo Minimal (wrong),topo_minimal,topo_moderate,✗,1.0,0.2,0.8,✓  (Steel),✓  (Sparse),✓  (Low),✓  (Symmetric),4/4,Structural
+Ex.3 — Topo Moderate (wrong),topo_moderate,topo_isolated,✗,0.9999,0.2,0.5113,✓  (Steel),✓  (Dense),✓  (High),✓  (Asymmetric),4/4,Structural
+Ex.4 — Topo Connected (wrong),topo_connected,topo_minimal,✗,1.0,0.2,0.7999,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Symmetric),4/4,Structural
+Ex.5 — Topo Complex (correct),topo_complex,topo_complex,✓,1.0,0.2,0.6633,✓  (Steel),✓  (Moderate),✓  (Medium),✓  (Asymmetric),4/4,Structural
