@@ -14,8 +14,8 @@ Q3 - Symmetric assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
 SELECT ?assembly WHERE {
     ?assembly ex:hasStructure ""Symmetric"" .
 }",191
-Q4 - Steel simple rotors,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+Q4 - Steel topo-isolated assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
 SELECT ?assembly WHERE {
-    ?assembly rdf:type ex:SimpleRotor .
+    ?assembly rdf:type ex:TopoIsolated .
     ?assembly ex:hasMaterial ""Steel"" .
 }",116
