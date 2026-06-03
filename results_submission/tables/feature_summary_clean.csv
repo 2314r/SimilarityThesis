@@ -1,0 +1,14 @@
+Feature,Category,Type
+volume,Technical,Numerical
+edge_count,Technical,Numerical
+face_count,Technical,Numerical
+vertex_count,Technical,Numerical
+complexity_ratio,Technical,Numerical
+geometric_complexity,Technical,Numerical
+component_count,Structural,Numerical
+body_count,Structural,Numerical
+rotational_symmetry,Structural,Numerical
+material_class,Semantic,Categorical
+topology_class,Semantic,Categorical
+complexity_class,Semantic,Categorical
+structure_class,Semantic,Categorical

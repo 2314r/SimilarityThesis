@@ -1,0 +1,4 @@
+Method,Precision@3,Precision@5,Precision@10,MRR
+Semantic (all 4 features),0.3007,0.307,0.295,0.5405
+Semantic (material-only),0.2091,0.2056,0.205,0.4486
+Hybrid (material-only sem),0.3807,0.3649,0.3428,0.5693

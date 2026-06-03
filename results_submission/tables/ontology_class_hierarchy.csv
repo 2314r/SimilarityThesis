@@ -1,0 +1,7 @@
+Subject,Predicate,Object
+TopoIsolated,rdfs:subClassOf,EngineeringAssembly
+TopoModerate,rdfs:subClassOf,EngineeringAssembly
+TopoMinimal,rdfs:subClassOf,EngineeringAssembly
+TopoConnected,rdfs:subClassOf,EngineeringAssembly
+TopoComplex,rdfs:subClassOf,EngineeringAssembly
+EngineeringAssembly,rdfs:subClassOf,owl:Thing

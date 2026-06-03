@@ -1,0 +1,21 @@
+Query,SPARQL,Results
+Q1 - Same material and topology,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly ?material ?topology ?family
+WHERE {
+    ?assembly rdf:type ?family .
+    ?assembly ex:hasMaterial ?material .
+    ?assembly ex:hasTopology ?topology .
+}",746
+Q2 - High complexity assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly ex:hasComplexityLevel ""High"" .
+}",187
+Q3 - Symmetric assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly ex:hasStructure ""Symmetric"" .
+}",191
+Q4 - Steel topo-isolated assemblies,"PREFIX ex: <http://thesis.ulukbek.eu/ontology#>
+SELECT ?assembly WHERE {
+    ?assembly rdf:type ex:TopoIsolated .
+    ?assembly ex:hasMaterial ""Steel"" .
+}",116
