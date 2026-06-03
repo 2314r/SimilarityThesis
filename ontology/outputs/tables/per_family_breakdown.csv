@@ -1,26 +1,26 @@
-Method,Family,n,P@1,P@5,MRR
-Technical,topo_complex,156,0.4808,0.4667,0.6363
-Technical,topo_connected,154,0.4026,0.3584,0.5721
-Technical,topo_isolated,128,0.3438,0.3547,0.514
-Technical,topo_minimal,134,0.3284,0.303,0.5316
-Technical,topo_moderate,174,0.3621,0.3207,0.5537
-Semantic (Ontology),topo_complex,156,0.5513,0.4,0.7231
-Semantic (Ontology),topo_connected,154,0.4675,0.3104,0.6253
-Semantic (Ontology),topo_isolated,128,0.1875,0.3078,0.4762
-Semantic (Ontology),topo_minimal,134,0.194,0.2881,0.4139
-Semantic (Ontology),topo_moderate,174,0.2471,0.2345,0.4468
-Hybrid,topo_complex,156,0.4872,0.4577,0.6509
-Hybrid,topo_connected,154,0.4351,0.3494,0.595
-Hybrid,topo_isolated,128,0.3828,0.3406,0.5295
-Hybrid,topo_minimal,134,0.3433,0.303,0.545
-Hybrid,topo_moderate,174,0.3563,0.3149,0.5375
-Structural,topo_minimal,134,,0.2627,0.6393
-Structural,topo_connected,154,,0.2156,0.4305
-Structural,topo_moderate,174,,0.2425,0.4195
-Structural,topo_complex,156,,0.3731,0.5806
-Structural,topo_isolated,128,,0.275,0.3662
-Euclidean,topo_minimal,134,,0.3134,0.5643
-Euclidean,topo_connected,154,,0.313,0.4873
-Euclidean,topo_moderate,174,,0.2897,0.4602
-Euclidean,topo_complex,156,,0.4397,0.642
-Euclidean,topo_isolated,128,,0.325,0.5324
+Method,Family,n,P@5,MRR
+Technical,topo_minimal,134,0.303,0.5316
+Technical,topo_connected,154,0.3584,0.5721
+Technical,topo_moderate,174,0.3207,0.5537
+Technical,topo_complex,156,0.4667,0.6363
+Technical,topo_isolated,128,0.3547,0.514
+Semantic (Ontology),topo_minimal,134,0.2881,0.4139
+Semantic (Ontology),topo_connected,154,0.3104,0.6253
+Semantic (Ontology),topo_moderate,174,0.2345,0.4468
+Semantic (Ontology),topo_complex,156,0.4,0.7231
+Semantic (Ontology),topo_isolated,128,0.3078,0.4762
+Structural,topo_minimal,134,0.2627,0.6393
+Structural,topo_connected,154,0.2156,0.4305
+Structural,topo_moderate,174,0.2425,0.4195
+Structural,topo_complex,156,0.3731,0.5806
+Structural,topo_isolated,128,0.275,0.3662
+Hybrid,topo_minimal,134,0.303,0.545
+Hybrid,topo_connected,154,0.3494,0.595
+Hybrid,topo_moderate,174,0.3149,0.5375
+Hybrid,topo_complex,156,0.4577,0.6509
+Hybrid,topo_isolated,128,0.3406,0.5295
+Euclidean,topo_minimal,134,0.3134,0.5643
+Euclidean,topo_connected,154,0.313,0.4873
+Euclidean,topo_moderate,174,0.2897,0.4602
+Euclidean,topo_complex,156,0.4397,0.642
+Euclidean,topo_isolated,128,0.325,0.5324
