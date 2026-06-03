@@ -1,8 +1,0 @@
-Method,Precision@3,Precision@5,Precision@10,MRR
-Hybrid,0.3785,0.3542,0.3401,0.5731
-Semantic (Ontology),0.3007,0.307,0.295,0.5405
-Euclidean,0.3512,0.3362,0.3259,0.5349
-Technical,0.3744,0.3617,0.3408,0.564
-Structural,0.2922,0.2735,0.2763,0.4858
-Jaccard (raw),0.214,0.2102,0.1973,0.4244
-Random,0.1872,0.1928,0.1902,0.392
