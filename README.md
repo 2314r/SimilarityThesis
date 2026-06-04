@@ -32,7 +32,7 @@ This project implements a hybrid similarity assessment framework for CAD assembl
 S_hybrid = α · S_technical + β · S_semantic + γ · S_structural
 ```
 
-Empirically optimised weights: **α = 0.90, β = 0.10, γ = 0.00**
+Weights selected by **5-fold cross-validation** (tuned on train folds, scored on held-out queries): **α = 0.90, β = 0.10, γ = 0.00** (chosen in 4/5 folds). Held-out MRR = 0.5726 vs in-sample 0.5731 → optimism bias = 0.0005.
 
 ### Ground-Truth Labels
 
@@ -46,7 +46,7 @@ Five contact-topology families derived from assembly JSON files (independent of 
 | topo_connected | 154 |
 | topo_complex | 156 |
 
-Independence verified: Decision Tree accuracy on geometric features = 40.7% vs. 23.3% chance level.
+Independence verified: Decision Tree accuracy on geometric features = 39.4% vs. 20.0% chance level (5 balanced families).
 
 ---
 

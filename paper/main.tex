@@ -1,0 +1,652 @@
+%% Elsevier elsarticle template — filled for AEI submission
+%% Rahmanov et al. — Hybrid Ontology-Based Similarity for CAD Assembly Retrieval
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{lineno}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{pifont}
+\usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage{soul}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+\newcommand{\pmark}{\textcolor{orange}{$\sim$}}
+\newcommand{\rev}[1]{\textcolor{blue}{#1}}
+\newcommand{\del}[1]{\textcolor{red}{\sout{#1}}}
+
+\journal{Advanced Engineering Informatics}
+
+\begin{document}
+\begin{frontmatter}
+
+\title{Machine Learning Algorithms for Assessing the Similarity of CAD Assembly Variants Based on Ontological Features}
+
+\author[label1]{Ulukbek Rahmanov}
+\author[label1,label2]{Raja Hashim Ali}
+\author[label1]{Iftikhar Ahmed}
+
+\affiliation[label1]{organization={Department of Business, University of Europe for Applied Sciences},
+            addressline={Think Campus, Konrad-Zuse-Ring 11},
+            city={Potsdam},
+            postcode={14469},
+            state={Brandenburg},
+            country={Germany}}
+
+\affiliation[label2]{organization={Department of Artificial Intelligence, Ghulam Ishaq Khan Institute of Engineering Sciences and Technology},
+            city={Topi},
+            postcode={23460},
+            country={Pakistan}}
+
+\begin{abstract}
+Automated retrieval of CAD assemblies through similarity analysis is vital for enabling design reuse, significantly reducing the time engineers spend creating new products, and supporting the management of knowledge generated during the development of complex products.
+Current methods for retrieving similar CAD assemblies utilise mostly geometric information and therefore do not reflect either the semantic or structural aspects of design knowledge contained within engineering ontologies.
+A long-standing but underreported issue in CAD retrieval is evaluation circularity, which occurs when ground-truth labels are created using the very same feature space used for retrieval, resulting in grossly exaggerated and thus invalid performance estimates.
+This paper presents a hybrid similarity framework combining three feature domains --- technical (geometric), semantic (material ontology), and structural (contact topology) --- evaluated on 746 Fusion~360 CAD assemblies through a rigorous circular-free evaluation process.
+Three common evaluation pitfalls are identified and corrected: (1) label leakage, where ground-truth labels are derived from geometric features used as retrieval inputs; (2) zero-variance feature inclusion, which artificially inflates similarity scores; and (3) in-sample weight optimisation, where hybrid weights are tuned and evaluated on the same data, producing optimistically biased results.
+The third pitfall is corrected by selecting the hybrid weights through 5-fold cross-validation: weights are tuned on training folds and the model is scored only on held-out queries.
+The cross-validated held-out MRR (0.5726, 95\% bootstrap CI [0.5478, 0.5999]) is statistically indistinguishable from the in-sample estimate (0.5731), with an optimism bias of only 0.0005, confirming that the selected weights ($\alpha{=}0.90$, $\beta{=}0.10$, $\gamma{=}0.00$) generalise rather than overfit.
+Results show that the hybrid model performs statistically significantly better than all single-domain baselines according to the Wilcoxon signed-rank test ($p < 0.05$ for all comparisons).
+An OWL ontology encoding 4,476 RDF triples provides SPARQL-queryable explainability for every retrieval decision made by the system.
+Robustness analysis demonstrates that the hybrid model retains its superior performance relative to purely semantic retrieval up to 50\% semantic degradation.
+Contributions include a reusable evaluation methodology, an open dataset, and an explainable retrieval framework suitable for deployment in industrial CAD design environments.
+\end{abstract}
+
+\begin{graphicalabstract}
+%\includegraphics{grabs}
+\end{graphicalabstract}
+
+\begin{highlights}
+\item Three evaluation circularity pitfalls identified and corrected in CAD similarity retrieval
+\item Hybrid weights selected by 5-fold cross-validation; held-out MRR~=~0.5726 matches in-sample (bias~$=$~0.0005)
+\item Hybrid ontology-based framework outperforms all single-domain baselines on 746 Fusion~360 assemblies
+\item Bootstrap confidence intervals and Wilcoxon tests confirm statistical significance of all comparisons
+\item OWL ontology with 4,476 RDF triples enables SPARQL-queryable explainable retrieval
+\item Framework remains robust under 50\% semantic noise degradation
+\end{highlights}
+
+\begin{keyword}
+CAD assembly retrieval \sep ontology-based similarity \sep hybrid similarity \sep evaluation methodology \sep machine learning \sep knowledge graph \sep design reuse
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+%%=============================================================
+\section{Introduction}
+%%=============================================================
+
+Large CAD repositories maintained by modern manufacturing organisations contain many thousands of assembly designs that have different geometric configurations, different material compositions, and different structural topologies~\cite{Cardone2003}.
+Design reuse workflows rely upon the automated retrieval of similar assemblies.
+When engineers need a component for a new product, searching through their organisation's database of existing designs for something similar to what they want can help avoid redundant modelling efforts, reduce time-to-market, and allow proven engineering knowledge to be leveraged across multiple product families~\cite{Iyer2005}.
+The importance of design reuse has also been established economically; research indicates that 40--70\% of new products contain significant portions of previously developed structural or functional content~\cite{Shah2001}.
+However, today's commercial CAD retrieval systems depend largely on manual or keyword-based searches and manually curated taxonomies.
+Because these methods do not scale and because the amount of curation required increases with the number of items in a repository, it is necessary to develop and test data-driven methods for retrieving similar CAD designs at scale.
+This paper focuses on developing a hybrid system that uses a combined geometric, semantic, and structural representation of knowledge within a machine-learning pipeline to address the problem of retrieving CAD assembly similarities automatically.
+
+One major technical challenge to developing this type of system is selecting the appropriate method for representing design similarity using features.
+Geometric features --- vertex count, edge count, volumetric parameters --- are easily extracted from CAD files and represent dimensional properties.
+However, geometry alone represents no information about materials, connections between components in assemblies, or how the designer perceived functional categories; all of these influence how designers perceive design similarity~\cite{Gruber1993}.
+Engineering ontologies provide a means of capturing this additional information as semantic knowledge that can be represented in a machine-readable format that complements geometric representations.
+Therefore, combining these two types of representations into one weighted hybrid model is an intuitive approach.
+However, there has been limited rigorous testing of whether these multi-modal retrieval approaches result in better results than using just one modality.
+
+A critical but underreported problem in the CAD retrieval literature is evaluation circularity~\cite{Manning2008}.
+Circularity occurs when the ground-truth similarity labels used for evaluation are derived — directly or indirectly — from the same feature space used for retrieval.
+Under such conditions, any retrieval system that uses those features will artificially appear to perform well, and published performance figures become methodologically invalid.
+In developing the pipeline for this study, three distinct circularity instances were encountered: ground-truth labels thresholded on a geometric feature that was simultaneously used as a retrieval input; zero-variance features that introduced spurious similarity signals; and weight hyperparameters tuned and evaluated on the same sample set.
+Each of these pitfalls, if left uncorrected, produces results that cannot be trusted or reproduced on new data.
+
+\subsection{Gap Analysis}
+
+Existing CAD similarity methods fall into three broad categories: geometric~\cite{Cardone2003,Iyer2005}, semantic/ontological~\cite{Gruber1993,W3C2012}, and hybrid~\cite{Veltkamp2001}.
+Geometric methods achieve competitive performance on shape matching but ignore design intent, material, and assembly topology.
+Ontology-based methods capture rich semantic structure but have been evaluated primarily on small, manually labelled datasets without statistical rigour.
+Hybrid methods combining both modalities exist in the literature but typically suffer from two methodological weaknesses: weight selection is performed on the evaluation set (in-sample optimisation), and ground-truth labels are often derived from features that are also inputs to the retrieval system.
+No prior work provides a unified framework that simultaneously addresses label independence verification, multi-metric statistical evaluation with confidence intervals, and ontology-queryable explainability on a large industrial dataset.
+
+\subsection{Research Questions}
+
+The following research questions guide this investigation:
+\begin{enumerate}
+    \item \textbf{RQ1:} How can CAD assembly variants be formally represented using ontology-based features to enable automated similarity assessment?
+    \item \textbf{RQ2:} Which similarity metrics are most suitable for comparing CAD assembly variants based on ontological and technical feature representations?
+    \item \textbf{RQ3:} Does a hybrid similarity model combining semantic and technical features outperform single-domain similarity methods?
+    \item \textbf{RQ4:} How can ontological knowledge support explainable and robust engineering decision-making in retrieval scenarios?
+    \item \textbf{RQ5:} How can ontology-based similarity assessment support variant management and design decision-making in practice?
+\end{enumerate}
+
+\subsection{Problem Statement}
+
+This study addresses the problem of automated similarity retrieval of CAD assemblies from a large industrial repository under methodologically rigorous evaluation conditions.
+Given a query assembly, the system must retrieve the most similar assemblies by combining geometric, semantic, and structural feature domains within a weighted hybrid framework.
+Ground-truth evaluation labels must be verified as independent of all retrieval feature inputs to prevent circular evaluation.
+The pipeline must be reproducible, statistically validated with confidence intervals and significance tests, and equipped with an OWL ontology that makes individual retrieval decisions auditable via SPARQL queries.
+
+\subsection{Novelty of this Study}
+
+This study makes the following novel contributions relative to the existing CAD retrieval literature:
+\begin{itemize}
+    \item \textbf{Taxonomy of three evaluation pitfalls:} We identify, document, and correct three distinct circularity instances — label leakage, zero-variance features, and in-sample weight optimisation — providing concrete examples and a reusable detection methodology for the CAD retrieval community. In-sample weight optimisation is corrected through 5-fold cross-validated weight selection with held-out evaluation, and we quantify the resulting optimism bias (0.0005~MRR) directly.
+    \item \textbf{Contact-topology ground truth:} We derive evaluation labels from contact topology features (assembly joint counts and hole counts) that are verifiably independent of the geometric retrieval feature set, confirmed by a Decision Tree classifier achieving only 39.4\% accuracy against a 20\% chance level.
+    \item \textbf{Comprehensive statistical validation:} Bootstrap 95\% confidence intervals (1,000 resamples) and Wilcoxon signed-rank tests are computed for six metrics — Precision@1, Precision@3, Precision@5, Precision@10, NDCG@10, and MRR — across all seven retrieval methods, providing a rigorous multi-metric comparison unavailable in prior CAD retrieval work.
+    \item \textbf{OWL knowledge graph with SPARQL explainability:} A formal OWL ontology encoding 746 assemblies as 4,476 RDF triples enables engineers to query and justify retrieval results directly, bridging the gap between numeric similarity and human-interpretable design knowledge.
+    \item \textbf{Semantic feature ablation:} An explicit ablation study compares material-only semantic similarity against a four-feature semantic encoding, quantifying the marginal contribution of discretised technical features embedded in the semantic domain.
+\end{itemize}
+
+\subsection{Significance of Our Work}
+
+This work demonstrates that a hybrid combination of geometric and ontology-semantic features, evaluated under circular-free conditions, achieves statistically significant improvement in CAD assembly retrieval over all single-domain baselines (Hybrid MRR = 0.5731, 95\% CI [0.5462, 0.5999]).
+The study also demonstrates that the same ontology infrastructure provides SPARQL-queryable explainability, enabling engineers to audit retrieval decisions without relying on opaque numeric similarity scores.
+The framework is reproducible: all data, code, and outputs are available, and the evaluation protocol is documented in sufficient detail to be applied to other CAD repositories.
+For industrial practitioners, the work suggests that integrating a lightweight material ontology into existing geometric retrieval systems yields a measurable and statistically defensible improvement in first-rank retrieval quality at minimal computational overhead.
+
+
+%%=============================================================
+\section{Literature Review}
+%%=============================================================
+
+CAD similarity assessment has been studied across multiple research communities, spanning computer-aided design, information retrieval, knowledge representation, and machine learning.
+Prior work can be broadly categorised into four groups: geometric shape-based methods, ontology-based knowledge representation, hybrid and multi-modal similarity, and evaluation methodology for retrieval systems.
+These groups are reviewed in the subsections below, with each subsection establishing the state of the art and identifying the gap addressed by the present work.
+
+\subsection{Geometric Similarity in CAD}
+
+The dominant paradigm for CAD retrieval relies on geometric descriptors extracted directly from 3D models or assembly files.
+Cardone et al.~\cite{Cardone2003} provide a comprehensive survey of shape similarity algorithms for product design, classifying approaches into feature-based, graph-based, and topological methods, and noting that no single method dominates across all application domains.
+Iyer et al.~\cite{Iyer2005} present a scalable framework for three-dimensional shape-based searching in large product databases, demonstrating that cosine similarity on normalised feature vectors achieves competitive retrieval performance on thousands of parts.
+Regli and Cicirello~\cite{Regli2000} study the management of digital libraries for CAD, noting that keyword and feature-based retrieval are complementary and that purely geometric approaches fail to capture design intent and functional equivalence.
+The Fusion~360 Gallery dataset used in this study, introduced by Willis et al.~\cite{Willis2021}, represents a large-scale open benchmark that enables rigorous empirical comparison of geometric and semantic retrieval methods on real industrial assemblies.
+More recent work learns geometric representations directly from the boundary representation (B-rep) rather than from hand-crafted descriptors: UV-Net~\cite{Jayaraman2021} encodes parametric surfaces and curves with a hybrid image--graph network, and BRepNet~\cite{Lambourne2021} applies topological message passing over the faces, edges, and coedges of a solid model.
+While these learned embeddings achieve strong results on classification and segmentation, they require large labelled training sets and GPU infrastructure, and their retrieval evaluations rarely verify that relevance labels are independent of the learned representation.
+A key limitation of geometric methods documented across these works is their inability to represent material properties, assembly semantics, or functional purpose — precisely the information captured by the ontology-based components of the present framework.
+
+\subsection{Ontology-Based Engineering Knowledge}
+
+Ontologies provide a formal mechanism for representing engineering knowledge at multiple levels of abstraction.
+Gruber~\cite{Gruber1993} defines an ontology as a specification of a conceptualisation, establishing the foundational vocabulary for knowledge representation that underpins the OWL standard adopted in this work.
+The W3C OWL~2 specification~\cite{W3C2012} provides a standardised language for encoding classes, properties, and relationships in a machine-readable form, enabling reasoning over engineering knowledge bases.
+Szykman et al.~\cite{Szykman1999} investigate the use of ontologies in design repositories, demonstrating that formal knowledge representation improves retrieval relevance beyond what geometric parameters alone can provide.
+Young et al.~\cite{Young2007} show that function-behaviour-structure ontologies can capture design intent and support variant management workflows in mechanical engineering, motivating the use of ontological features in the present similarity framework.
+Despite these advances, most ontology-based retrieval systems are evaluated on small, manually annotated datasets with limited statistical rigour, and direct comparison with geometric baselines under rigorous circular-free conditions remains absent from the literature.
+
+\subsection{Hybrid and Multi-Modal Similarity}
+
+Combining multiple feature modalities is a natural strategy for improving retrieval accuracy when no single modality captures all relevant aspects of similarity.
+Veltkamp and Hagedoorn~\cite{Veltkamp2001} survey state-of-the-art shape matching approaches, noting that multi-modal combination consistently outperforms single-modality methods when feature domains are complementary and non-redundant.
+Pedregosa et al.~\cite{Pedregosa2011} present Scikit-learn, the machine learning library used in this study for all feature extraction, similarity computation, and statistical evaluation, providing a reproducible and well-tested computational foundation.
+Bromley et al.~\cite{Bromley1994} introduce Siamese networks for similarity learning from paired examples, establishing that learned similarity representations can outperform hand-crafted features when sufficient training data is available.
+Vishwanathan et al.~\cite{Vishwanathan2010} develop graph kernels for structured data, providing a theoretical framework for comparing assemblies represented as graphs — a direction complementary to the vector-based hybrid approach taken here.
+More recent multi-modal work on CAD assemblies learns relational structure directly: JoinABLe~\cite{Willis2022} predicts assembly joints from parametric geometry, AutoMate~\cite{Jones2021} learns automatic mating of assembly components, and Ma et al.~\cite{Ma2021} survey deep graph similarity learning across domains.
+These approaches confirm that combining structural and semantic signals improves retrieval, but they depend on large labelled corpora and do not isolate evaluation circularity as a first-class concern.
+A consistent weakness in hybrid retrieval literature is that weight parameters are typically selected on the same dataset used for evaluation, introducing optimistic bias; this study corrects this through cross-validated weight selection with held-out evaluation and bootstrap CIs that reflect the uncertainty of the reported estimates.
+
+\subsection{Evaluation Methodology for Retrieval Systems}
+
+Rigorous evaluation is as important as the retrieval method itself; invalid evaluation protocols render published results unreproducible and misleading.
+Manning et al.~\cite{Manning2008} provide the standard reference for MRR, Precision@K, and NDCG as ranking-based evaluation metrics in information retrieval, and these metrics are adopted directly in this study.
+J\"{a}rvelin and Kekäläinen~\cite{Jarvelin2002} develop cumulated gain-based evaluation metrics including NDCG, demonstrating their advantages over binary relevance metrics in graded relevance scenarios.
+Koch et al.~\cite{Koch2019} introduce the ABC dataset for geometric deep learning, providing a large-scale CAD benchmark and motivating the need for standardised evaluation protocols in CAD retrieval research.
+Bunke~\cite{Bunke1997} establishes the relationship between graph edit distance and maximum common subgraph, providing a theoretical basis for structural similarity comparison that informs the structural feature domain used in this work.
+A critical gap identified across all four literature streams is the absence of a unified framework that simultaneously addresses circular-free ground truth, multi-metric statistical validation, and ontology-queryable explainability for CAD assembly retrieval — the gap that this paper directly addresses.
+
+A summary of representative literature relative to the present study is provided in Table~\ref{tab:LiteratureSummary}.
+
+\begin{table}[!ht]
+\centering
+\caption{Comparative literature review matrix. \cmark~= addressed, \xmark~= not addressed, \pmark~= partially addressed. The proposed study is the only entry addressing all seven criteria simultaneously.}
+\label{tab:LiteratureSummary}
+\scriptsize
+\begin{adjustbox}{width=\textwidth}
+\begin{tabular}{p{2.2cm} p{2.0cm} p{3.2cm} p{2.2cm} p{3.5cm} c c c c c c}
+\toprule
+\textbf{Field} & \textbf{Study} & \textbf{Method} & \textbf{Dataset} & \textbf{Contribution} & \textbf{Multi-metric} & \textbf{Stat. test} & \textbf{Bootstrap CI} & \textbf{Circ.-free GT} & \textbf{Ontology} & \textbf{XAI} \\
+\midrule
+Geometric retrieval & Cardone et al.~\cite{Cardone2003} & Shape similarity survey & Multiple & Taxonomy of shape similarity algorithms & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Geometric retrieval & Iyer et al.~\cite{Iyer2005} & Cosine similarity on feature vectors & Large product DB & Scalable 3D shape retrieval framework & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Geometric retrieval & Willis et al.~\cite{Willis2021} & Programmatic CAD construction & Fusion 360 Gallery & Large-scale open CAD benchmark dataset & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Ontology-based & Gruber~\cite{Gruber1993} & Ontology specification & General & Foundational ontology definition & \xmark & \xmark & \xmark & \xmark & \cmark & \xmark \\
+Ontology-based & W3C~\cite{W3C2012} & OWL 2 standard & General & Machine-readable knowledge representation & \xmark & \xmark & \xmark & \xmark & \cmark & \pmark \\
+Hybrid similarity & Bromley et al.~\cite{Bromley1994} & Siamese networks & Signature data & Learned similarity from paired examples & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Evaluation & Manning et al.~\cite{Manning2008} & MRR, P@K theory & General IR & Standard retrieval evaluation metrics & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Evaluation & J\"{a}rvelin \& Kekäläinen~\cite{Jarvelin2002} & NDCG metric & General IR & Graded relevance evaluation framework & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Deep learning & Jayaraman et al.~\cite{Jayaraman2021} & UV-Net (B-rep CNN+GNN) & Fusion 360 / ABC & Learned boundary-representation embeddings & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+Deep learning & Willis et al.~\cite{Willis2022} & JoinABLe (GNN) & Fusion 360 Joints & Learned bottom-up assembly joints & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+\midrule
+\textbf{Proposed} & \textbf{This study} & \textbf{Hybrid ontology-based similarity} & \textbf{Fusion 360 Gallery (746)} & \textbf{Circular-free hybrid retrieval with OWL explainability} & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+
+%%=============================================================
+\section{Methodology}
+%%=============================================================
+
+The proposed framework processes 746 Fusion~360 CAD assemblies through a four-stage pipeline: feature extraction across three independent domains, hybrid weighted similarity fusion, ontology construction and SPARQL query generation, and rigorous statistical evaluation against contact-topology ground-truth labels.
+Figure~\ref{Fig:Workflow} provides an overview of the complete methodology, illustrating the flow from raw assembly data through feature extraction, similarity computation, OWL ontology encoding, and statistical evaluation.
+Each stage is designed to be independently reproducible, with all intermediate outputs saved as CSV tables and PDF figures.
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=16cm]{./Figures/workflow.pdf}}
+\caption{Methodology overview: (1) Dataset loading and feature extraction from 746 Fusion~360 assemblies; (2) Construction of Technical, Semantic, and Structural similarity matrices using cosine similarity; (3) Hybrid weighted fusion with grid-search weight optimisation; (4) OWL ontology construction with SPARQL-queryable knowledge graph; (5) Rigorous statistical evaluation using bootstrap CIs, Wilcoxon tests, and per-family breakdown against contact-topology ground truth.}
+\label{Fig:Workflow}
+\end{figure*}
+
+\subsection{Dataset}
+
+The Fusion~360 Gallery dataset~\cite{Willis2021} comprises CAD assemblies created by professional engineers and students using Autodesk Fusion~360 and made publicly available as part of an open design benchmark.
+From this collection, 746 complete assemblies with fully populated feature records are retained for this study.
+Each assembly is described by eleven geometric features: component count, body count, edge count, face count, vertex count, mass, volume, surface area, geometric complexity, complexity ratio, and rotational symmetry.
+Additionally, material type (categorical, normalised to five classes: Steel, Aluminum, Plastic, Wood, Other) and three contact-topology features (number of constrained contacts, number of holes, number of component occurrences) are extracted from the assembly JSON manifest files.
+The dataset is geometrically homogeneous: the majority of assemblies are small-to-medium Steel components with low body counts, which produces high median technical cosine similarity (approximately 0.99) and explains the modest absolute retrieval performance observed across all methods.
+Table~\ref{tab:DatasetStats} summarises the dataset characteristics.
+
+\begin{table}[!ht]
+\centering
+\caption{Dataset statistics for the 746 Fusion~360 CAD assemblies used in this study. Contact topology labels (topo\_family) are derived independently from the geometric retrieval features.}
+\label{tab:DatasetStats}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Property} & \textbf{Value} & \textbf{Notes} \\
+\midrule
+Total assemblies & 746 & Complete records only \\
+Geometric features & 11 & edge\_count, face\_count, volume, etc. \\
+Semantic features & 4 & material\_class, topology\_class, etc. \\
+Structural features & 3 & n\_contacts, n\_holes, n\_occurrences \\
+Material classes & 5 & Steel, Aluminum, Plastic, Wood, Other \\
+Topology families & 5 & topo\_isolated through topo\_complex \\
+Missing values & 0 & After preprocessing \\
+Source & Fusion 360 Gallery & Willis et al.~\cite{Willis2021} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ground-Truth Label Construction and Independence Verification}
+
+A central methodological contribution of this work is the construction of ground-truth evaluation labels that are verifiably independent of all retrieval feature domains.
+Contact topology — the number of constrained joints and holes in an assembly — captures structural complexity at the assembly level and is conceptually distinct from the geometric dimensions used in technical similarity computation.
+Labels are assigned by computing a combined contact score $s = n_{\text{contacts}} + n_{\text{holes}}$ for each assembly and partitioning the log-transformed distribution into five quintile groups, yielding five topology families: topo\_isolated ($n{=}128$), topo\_minimal ($n{=}134$), topo\_moderate ($n{=}174$), topo\_connected ($n{=}154$), and topo\_complex ($n{=}156$).
+
+Independence is verified by training a Decision Tree classifier (depth 5, 5-fold stratified cross-validation) on the eleven geometric features alone and evaluating its accuracy in predicting the topo\_family labels.
+The classifier achieves 39.4\% accuracy against a 20.0\% chance level ($1/k$ for $k{=}5$ families), confirming that topo\_family labels carry information beyond random assignment but are not recoverable from geometric features with high reliability.
+This confirmation is necessary to rule out circular evaluation: if geometric features could perfectly predict the labels, any geometric similarity system would trivially appear to perform well on this benchmark.
+
+\subsection{Evaluation Pitfall Documentation}
+
+Three evaluation pitfalls were identified and corrected during the development of this framework; these are documented here as a methodological contribution.
+
+\textbf{Pitfall B1 — Label leakage.} In an earlier iteration, family labels were assigned by thresholding the \texttt{geometric\_complexity} feature, which was simultaneously included as a retrieval input. A Decision Tree trained on geometric features achieved 99.87\% accuracy on these labels, revealing complete circular evaluation. The fix was to derive labels from contact topology features (\texttt{n\_contacts}, \texttt{n\_holes}) that are absent from the geometric feature set.
+
+\textbf{Pitfall B2 — Zero-variance features.} The \texttt{surface\_area} column was zero for all 746 assemblies due to a data extraction bug in the source repository. Including it introduced no signal but added noise to cosine similarity. Additionally, \texttt{mass} was numerically identical to \texttt{volume} (Pearson $r{=}0.998$), making it a redundant feature. Both were removed from the technical feature set.
+
+\textbf{Pitfall B3 — In-sample weight optimisation.} A grid search over hybrid weights ($\alpha, \beta, \gamma$) was initially performed and evaluated on the same 746-assembly set, producing optimistically biased MRR estimates. This pitfall is corrected by selecting the hybrid weights through 5-fold stratified cross-validation (Section~\ref{sec:cv}): the weight grid is searched on the training folds only, and performance is reported on the held-out test queries that played no part in selecting the weights. The resulting held-out MRR is compared directly against the in-sample estimate, allowing the optimism bias to be measured rather than merely acknowledged.
+
+\subsection{Detailed Methodology}
+
+\textbf{Technical similarity.} Eleven geometric features are normalised using Min-Max scaling to the unit interval, and cosine similarity is computed between all pairs of scaled feature vectors:
+\begin{equation}
+S_{\text{tech}}(i,j) = \frac{\mathbf{x}_i \cdot \mathbf{x}_j}{\|\mathbf{x}_i\| \cdot \|\mathbf{x}_j\|}
+\label{Eq:CosineSim}
+\end{equation}
+where $\mathbf{x}_i$ and $\mathbf{x}_j$ are the normalised geometric feature vectors of assemblies $i$ and $j$.
+Self-similarity is set to 1.0 on the diagonal to prevent a query from retrieving itself.
+
+\textbf{Semantic similarity.} Four ontology-derived categorical features are one-hot encoded and cosine similarity is computed on the binary encoding matrix.
+The semantic feature set comprises: \texttt{material\_class} (Steel, Aluminum, Plastic, Wood, Other — derived from the assembly material annotation), \texttt{topology\_class} (Sparse/Moderate/Dense — discretised from \texttt{edge\_count}), \texttt{complexity\_class} (Low/Medium/High — discretised from \texttt{geometric\_complexity}), and \texttt{structure\_class} (Symmetric/Asymmetric — binarised from \texttt{rotational\_symmetry}).
+It is noted as a limitation that three of the four semantic features are derived from technical columns; \texttt{material\_class} is the only fully independent semantic signal. An ablation study (Section~\ref{sec:rq3}) quantifies the contribution of each component.
+
+\textbf{Structural similarity.} Three contact-topology features (\texttt{n\_contacts}, \texttt{n\_holes}, \texttt{n\_occurrences}) are normalised and cosine similarity is computed.
+Importantly, these features define the topo\_family evaluation labels and are therefore \emph{excluded} from the hybrid retrieval pipeline to prevent structural circular evaluation; the structural similarity matrix is retained for ablation analysis only.
+
+\textbf{Hybrid similarity.} The hybrid similarity matrix is a weighted linear combination:
+\begin{equation}
+S_{\text{hybrid}}(i,j) = \alpha \cdot S_{\text{tech}}(i,j) + \beta \cdot S_{\text{sem}}(i,j) + \gamma \cdot S_{\text{struct}}(i,j)
+\label{Eq:HybridSim}
+\end{equation}
+where $\alpha + \beta + \gamma = 1$ and $\alpha, \beta, \gamma \geq 0$.
+Weight optimisation is performed by grid search over $\{0.0, 0.1, \ldots, 1.0\}^3$ constrained to the simplex, maximising MRR.
+To avoid in-sample optimisation bias (Pitfall B3), the search is embedded in a 5-fold cross-validation: the grid is evaluated on the training folds and the chosen weights are scored on held-out queries only (Section~\ref{sec:cv}).
+The selected weights are $\alpha{=}0.90$, $\beta{=}0.10$, $\gamma{=}0.00$ --- chosen in four of the five folds --- confirming that geometric features dominate, the material ontology contributes a small but consistent signal, and structural features add no marginal value (structural similarity is excluded to remain independent of the labels).
+
+\textbf{OWL ontology.} An OWL~2 ontology is constructed using rdflib, encoding each of the 746 assemblies as an individual within a five-class topology hierarchy (TopoIsolated, TopoMinimal, TopoModerate, TopoConnected, TopoComplex), each a subclass of \texttt{EngineeringAssembly}.
+The ontology comprises 4,476 RDF triples using six predicates: \texttt{rdf:type}, \texttt{ex:hasMaterial}, \texttt{ex:hasComplexityLevel}, \texttt{ex:hasTopology}, \texttt{ex:hasStructure}, and \texttt{ex:belongsToFamily}.
+SPARQL queries enable direct retrieval of assemblies by material, topology class, or any combination of ontological properties, providing human-interpretable justification for similarity decisions.
+
+\subsection{Evaluation Metrics}
+
+Six retrieval metrics are computed for each method across all 746 queries.
+For each query assembly $q$, a candidate set $\mathcal{C} = \{1, \ldots, N\} \setminus \{q\}$ is ranked by descending similarity score, and relevant candidates are those sharing the topo\_family label with $q$.
+
+\textbf{Precision@K} measures the fraction of the top-$K$ retrieved results that are relevant:
+\begin{equation}
+\text{P@K}(q) = \frac{|\{c \in \text{top-}K(q) : \text{label}(c) = \text{label}(q)\}|}{K}
+\label{Eq:PrecAtK}
+\end{equation}
+Macro-averaged P@1, P@3, P@5, and P@10 are reported.
+
+\textbf{Mean Reciprocal Rank (MRR)} rewards systems that rank the first relevant result highly:
+\begin{equation}
+\text{MRR} = \frac{1}{|Q|} \sum_{q \in Q} \frac{1}{\text{rank}_q^{\text{first}}}
+\label{Eq:MRR}
+\end{equation}
+where $\text{rank}_q^{\text{first}}$ is the rank of the first relevant result for query $q$~\cite{Manning2008}.
+
+\textbf{NDCG@10} measures ranked retrieval quality with position-discounted relevance~\cite{Jarvelin2002}:
+\begin{equation}
+\text{NDCG@10}(q) = \frac{\text{DCG@10}(q)}{\text{IDCG@10}(q)}, \quad \text{DCG@10}(q) = \sum_{r=1}^{10} \frac{\text{rel}_r}{\log_2(r+1)}
+\label{Eq:NDCG}
+\end{equation}
+where $\text{rel}_r \in \{0,1\}$ indicates whether the assembly at rank $r$ shares the query's topo\_family label.
+
+\textbf{Statistical validation.} Bootstrap 95\% confidence intervals~\cite{Efron1993} are computed from 1,000 resamples for all six metrics and all seven methods.
+Pairwise Wilcoxon signed-rank tests compare per-query MRR scores of the Hybrid model against each baseline.
+Effect size is reported as Cohen's $d = (\bar{x}_{\text{hybrid}} - \bar{x}_{\text{other}}) / s_{\text{diff}}$~\cite{Cohen1988}.
+
+\subsection{Experimental Settings}
+
+All experiments are implemented in Python~3.10 using Scikit-learn~\cite{Pedregosa2011}, NumPy, Pandas, Matplotlib, and rdflib.
+Similarity matrices are computed on a standard laptop CPU; the largest matrix ($746 \times 746$ dense float) occupies approximately 4.5\,MB in memory.
+Min-Max scaling is applied independently to the technical and structural feature sets.
+The random seed is fixed at 42 for all stochastic operations (Decision Tree, random baseline, bootstrap resampling).
+Table~\ref{tab:ExperimentalSettings} summarises the key experimental parameters.
+
+\begin{table}[!ht]
+\centering
+\caption{Experimental settings used across all experiments in this study.}
+\label{tab:ExperimentalSettings}
+\begin{tabular}{lc}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Dataset & Fusion 360 Gallery~\cite{Willis2021} \\
+Assemblies & 746 \\
+Technical features & 11 (geometric) \\
+Semantic features & 4 (ontology-derived) \\
+Similarity measure & Cosine similarity \\
+Weight grid step & 0.1 \\
+Bootstrap resamples & 1,000 \\
+CI level & 95\% \\
+Wilcoxon alternative & greater (one-sided) \\
+Random seed & 42 \\
+Independence check & Decision Tree, depth 5, 5-fold CV \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+%%=============================================================
+\section{Results}
+%%=============================================================
+
+\subsection{RQ1: Ontological Feature Representation}
+
+The OWL ontology was constructed successfully, encoding 746 assemblies as individuals within a five-class topology hierarchy containing 4,476 RDF triples across six predicates.
+The independence verification confirms that topo\_family labels are not recoverable from geometric features alone: a Decision Tree (depth 5, 5-fold CV) achieves 39.4\% accuracy against a 20.0\% chance level, a delta of 19.4 percentage points above chance.
+This result confirms that the evaluation labels carry information about structural complexity (contact topology) that is partially distinct from geometric dimensions, satisfying the independence requirement for circular-free evaluation.
+Figure~\ref{Fig:EDA} presents the distribution of assemblies across the five topology families and the feature statistics, confirming near-balanced class sizes (128--174 assemblies per family) and the near-zero surface area extraction anomaly that motivated removal of that feature.
+The t-SNE visualisation in Figure~\ref{Fig:tSNE} projects the combined feature space into two dimensions; the five topology families exhibit partial but not complete separation, consistent with the 39.4\% independence check accuracy and the dataset's geometric homogeneity.
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/eda_overview.pdf}}
+\caption{Exploratory data analysis of the 746 Fusion~360 assemblies. Left panel: distribution of assemblies across five contact-topology families (topo\_isolated: 128, topo\_minimal: 134, topo\_moderate: 174, topo\_connected: 154, topo\_complex: 156), confirming near-balanced class sizes. Right panels: feature distributions for key geometric parameters, showing the geometric homogeneity of the dataset (most assemblies are small Steel components with low body counts).}
+\label{Fig:EDA}
+\end{figure*}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=12cm]{./Figures/tsne_embedding.pdf}}
+\caption{t-SNE embedding of the combined feature space (technical + semantic + structural) coloured by topo\_family ground-truth labels. Partial cluster separation is visible for topo\_complex and topo\_isolated families, while topo\_moderate, topo\_minimal, and topo\_connected overlap substantially — consistent with the 39.4\% Decision Tree accuracy confirming that labels are partially but not fully predictable from features.}
+\label{Fig:tSNE}
+\end{figure*}
+
+\subsection{RQ2: Comparison of Similarity Metrics}
+
+Seven similarity methods were evaluated against the five topo\_family groups across six retrieval metrics.
+Table~\ref{tab:MainResults} presents the complete results with 95\% bootstrap confidence intervals for MRR.
+The Hybrid model achieves the highest MRR (0.5731, 95\% CI [0.5462, 0.5999]) and highest P@1 (0.4021), outperforming all single-domain methods on first-rank retrieval.
+Technical similarity achieves marginally higher P@5 (0.3617 vs 0.3542) and P@10 (0.3408 vs 0.3401) than the Hybrid, reflecting the MRR-optimised weight selection that prioritises first-rank accuracy over top-5 coverage.
+The random baseline achieves MRR = 0.3920, which is non-trivially high due to the near-balanced class distribution; all learned methods substantially exceed this baseline.
+Figure~\ref{Fig:Comparison} visualises the performance comparison with bootstrap confidence intervals across all four precision metrics and MRR.
+
+\begin{table*}[!ht]
+\centering
+\caption{Retrieval performance of all seven methods on 746 Fusion~360 assemblies. Bootstrap 95\% confidence intervals (1,000 resamples) are reported for MRR. Best value per metric is shown in \textbf{bold}. Hybrid weights: $\alpha{=}0.90$ (technical), $\beta{=}0.10$ (semantic), $\gamma{=}0.00$ (structural).}
+\label{tab:MainResults}
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Method} & \textbf{P@1} & \textbf{P@3} & \textbf{P@5} & \textbf{P@10} & \textbf{NDCG@10} & \textbf{MRR} & \textbf{MRR 95\% CI} \\
+\midrule
+\textbf{Hybrid} ($\alpha{=}0.90$, $\beta{=}0.10$) & \textbf{0.4021} & \textbf{0.3785} & 0.3542 & 0.3401 & \textbf{0.3511} & \textbf{0.5731} & [0.5462, 0.5999] \\
+Technical (geometric) & 0.3861 & 0.3744 & \textbf{0.3617} & \textbf{0.3408} & \textbf{0.3511} & 0.5640 & [0.5376, 0.5908] \\
+Semantic (ontology) & 0.3365 & 0.3007 & 0.3070 & 0.2950 & 0.3004 & 0.5405 & [0.5149, 0.5671] \\
+Euclidean baseline & 0.3458 & 0.3512 & 0.3362 & 0.3259 & 0.3320 & 0.5349 & [0.5094, 0.5591] \\
+Structural & 0.2828 & 0.2922 & 0.2735 & 0.2763 & 0.2790 & 0.4858 & [0.4614, 0.5114] \\
+Jaccard (raw) & 0.2212 & 0.2140 & 0.2102 & 0.1973 & 0.2022 & 0.4244 & [0.4014, 0.4471] \\
+Random baseline & 0.1917 & 0.1872 & 0.1928 & 0.1902 & 0.1900 & 0.3920 & [0.3704, 0.4151] \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/aei_fig1_comparison_ci.pdf}}
+\caption{Retrieval performance comparison across seven methods with 95\% bootstrap confidence intervals. Four panels show P@3, P@5, P@10, and MRR. The Hybrid model achieves the highest MRR across all comparisons. Confidence intervals for Hybrid and Technical on MRR do not overlap with the Random and Jaccard baselines, confirming robust performance differences.}
+\label{Fig:Comparison}
+\end{figure*}
+
+\subsection{Cross-Validated Weight Selection}
+\label{sec:cv}
+
+To correct Pitfall B3 (in-sample weight optimisation), the hybrid weights are selected using 5-fold stratified cross-validation rather than tuned on the full evaluation set.
+In each fold, the weight grid is searched to maximise MRR on the training queries (four fifths of the assemblies), and the selected weights are then applied to score the held-out test queries (the remaining fifth) against the full candidate corpus.
+Because every assembly serves as a held-out query in exactly one fold, pooling the per-fold test scores yields 746 out-of-sample query results from which an unbiased MRR and its bootstrap confidence interval are computed.
+Table~\ref{tab:CV} reports the per-fold outcome.
+The weights $\alpha{=}0.90$, $\beta{=}0.10$, $\gamma{=}0.00$ are selected in four of the five folds; the single deviating fold selects a semantic-dominant combination on the near-flat region of the grid surface, reflecting the geometric homogeneity of the dataset rather than a genuinely different optimum.
+The pooled held-out MRR is 0.5726 (95\% bootstrap CI [0.5478, 0.5999]), which is statistically indistinguishable from the in-sample estimate of 0.5731; the optimism bias is therefore only 0.0005~MRR.
+This confirms that the reported weights generalise to unseen queries and that the in-sample headline figure is not an artefact of overfitting the weight grid.
+Figure~\ref{Fig:CV} visualises the per-fold train versus held-out MRR and the in-sample versus held-out comparison with its confidence interval.
+Crucially, the held-out hybrid model remains statistically significantly better than every single-domain baseline under the Wilcoxon signed-rank test (all $p < 0.05$), so the central claim of the paper survives the removal of in-sample bias.
+
+\begin{table}[!ht]
+\centering
+\caption{Cross-validated weight selection (5-fold stratified). Weights are chosen on the training folds and MRR is reported on the held-out test queries. The pooled held-out MRR (0.5726) is statistically indistinguishable from the in-sample estimate (0.5731), giving an optimism bias of 0.0005.}
+\label{tab:CV}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Fold} & \textbf{$\alpha$} & \textbf{$\beta$} & \textbf{$\gamma$} & \textbf{Train MRR} & \textbf{Held-out MRR} \\
+\midrule
+1 & 0.90 & 0.10 & 0.00 & 0.5689 & 0.5895 \\
+2 & 0.10 & 0.90 & 0.00 & 0.5734 & 0.5697 \\
+3 & 0.90 & 0.10 & 0.00 & 0.5734 & 0.5719 \\
+4 & 0.90 & 0.10 & 0.00 & 0.5716 & 0.5788 \\
+5 & 0.90 & 0.10 & 0.00 & 0.5782 & 0.5527 \\
+\midrule
+\textbf{Pooled held-out} & \multicolumn{3}{c}{$\alpha{=}0.90,\beta{=}0.10,\gamma{=}0.00$} & In-sample: 0.5731 & \textbf{0.5726} \\
+\multicolumn{4}{l}{95\% CI [0.5478, 0.5999] \quad Optimism bias $=0.0005$} & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=16cm]{./Figures/cv_weight_selection.pdf}}
+\caption{Cross-validated weight selection (Pitfall B3 correction). Left: per-fold training MRR (used for weight selection) versus held-out test MRR, with the selected technical weight $\alpha$ annotated; four of five folds select $\alpha{=}0.9$. Right: in-sample MRR (0.5731) versus pooled held-out cross-validated MRR (0.5726) with its 95\% bootstrap confidence interval; the negligible gap (bias $=0.0005$) demonstrates that the reported weights do not overfit the evaluation set.}
+\label{Fig:CV}
+\end{figure*}
+
+\subsection{RQ3: Hybrid vs Single-Domain and Ablation Study}
+\label{sec:rq3}
+
+The hybrid model with $\alpha{=}0.90$, $\beta{=}0.10$, $\gamma{=}0.00$ achieves statistically significant improvement over all six baselines on MRR (Wilcoxon signed-rank test, $p < 0.05$ for all comparisons).
+Table~\ref{tab:Significance} presents the full statistical analysis including $\Delta$MRR, $p$-values, and Cohen's $d$ effect sizes.
+The largest effect is observed for Hybrid vs Random ($d{=}0.364$) and Hybrid vs Jaccard ($d{=}0.303$); the effect for Hybrid vs Technical is small ($d{=}0.038$) but statistically significant given $n{=}746$ queries.
+The weight grid search (Figure~\ref{Fig:WeightGrid}) confirms that high technical weights ($\alpha \geq 0.8$) consistently produce the best MRR, with a small but consistent boost from adding 10\% semantic contribution.
+
+\begin{table}[!ht]
+\centering
+\caption{Statistical significance of Hybrid MRR versus all baselines. Wilcoxon signed-rank test (one-sided, alternative: greater). Cohen's $d$ computed from per-query MRR score differences.}
+\label{tab:Significance}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Comparison} & \textbf{$\Delta$MRR} & \textbf{$p$-value} & \textbf{Significant} & \textbf{Cohen's $d$} \\
+\midrule
+Hybrid vs Random & +0.181 & $1.23 \times 10^{-20}$ & YES & 0.364 \\
+Hybrid vs Jaccard & +0.149 & $1.62 \times 10^{-15}$ & YES & 0.303 \\
+Hybrid vs Structural & +0.087 & $1.77 \times 10^{-6}$ & YES & 0.175 \\
+Hybrid vs Euclidean & +0.038 & $9.32 \times 10^{-3}$ & YES & 0.088 \\
+Hybrid vs Semantic & +0.033 & $2.27 \times 10^{-2}$ & YES & 0.074 \\
+Hybrid vs Technical & +0.009 & $2.15 \times 10^{-2}$ & YES & 0.038 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The ablation study in Table~\ref{tab:Ablation} compares material-only semantic similarity against the full four-feature semantic encoding.
+Material-only semantic achieves MRR = 0.4486, while all-4-feature semantic achieves MRR = 0.5405, a difference of +0.092 MRR.
+The Hybrid with material-only semantic achieves MRR = 0.5693, marginally below the full Hybrid (0.5731), confirming that the discretised technical features in the semantic domain contribute a measurable but modest improvement.
+
+\begin{table}[!ht]
+\centering
+\caption{Ablation study: semantic feature scope. Material-only semantic uses only \texttt{material\_class}; all-4-feature semantic adds \texttt{topology\_class}, \texttt{complexity\_class}, and \texttt{structure\_class} derived from technical columns.}
+\label{tab:Ablation}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Method} & \textbf{P@1} & \textbf{P@3} & \textbf{P@5} & \textbf{P@10} & \textbf{NDCG@10} & \textbf{MRR} \\
+\midrule
+Semantic (all 4 features) & 0.3365 & 0.3007 & 0.3070 & 0.2950 & 0.3004 & 0.5405 \\
+Semantic (material-only) & 0.2252 & 0.2091 & 0.2056 & 0.2050 & 0.2061 & 0.4486 \\
+Hybrid (material-only sem.) & 0.3954 & 0.3807 & 0.3649 & 0.3428 & 0.3538 & 0.5693 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/aei_fig2_family_weights.pdf}}
+\caption{Left: Per-family P@5 breakdown for five methods across the five topo\_family groups. topo\_complex assemblies achieve the highest P@5 across all methods, while topo\_moderate shows the lowest, consistent with boundary overlap between adjacent quintile groups. Right: Hybrid weight grid search MRR surface — the optimal region ($\alpha \geq 0.8$) confirms the dominance of technical features with a consistent marginal gain from semantic contribution.}
+\label{Fig:WeightGrid}
+\end{figure*}
+
+\subsection{RQ4: Explainability and Robustness}
+
+The OWL ontology enables SPARQL-based explainability for every retrieval decision.
+Figure~\ref{Fig:Explainability} presents five representative retrieval traces, each showing the query assembly's ontological properties, the retrieved assembly's properties, and the per-component similarity contributions ($\alpha \cdot S_{\text{tech}}$ and $\beta \cdot S_{\text{sem}}$).
+This explainability layer allows engineers to verify that a retrieved design matches on the properties relevant to their decision (e.g., shared material and similar geometric complexity) without relying solely on an opaque numeric score.
+The robustness analysis in Figure~\ref{Fig:Robustness} shows Hybrid MRR degrading from 0.5731 to 0.4713 under 50\% semantic noise, while Semantic-only MRR degrades more steeply from 0.5405 to 0.4199.
+The Hybrid consistently outperforms Semantic-only at all noise levels, confirming that the geometric technical component provides a stable backbone that mitigates ontology quality degradation.
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/aei_fig5_explainability.pdf}}
+\caption{Explainability traces for five representative query assemblies. Each row shows a query--retrieve pair with their ontological property alignment (material, topology, complexity, structure) and the per-component similarity contributions. Correct retrievals show high alignment across multiple ontological properties; failure cases reveal where the scoring function is dominated by material similarity despite topological mismatch.}
+\label{Fig:Explainability}
+\end{figure*}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/aei_fig3_robustness_significance.pdf}}
+\caption{Left: Robustness of Hybrid and Semantic-only MRR under increasing Gaussian noise applied to the semantic similarity matrix (noise levels 0--50\%). The Hybrid consistently maintains higher MRR than Semantic-only at all noise levels, with a MRR of 0.4713 at 50\% noise versus 0.4199 for Semantic-only. Right: Wilcoxon test $p$-values and Cohen's $d$ effect sizes for all Hybrid-vs-baseline comparisons, confirming statistical significance across the performance spectrum.}
+\label{Fig:Robustness}
+\end{figure*}
+
+\subsection{RQ5: Supporting Engineering Decision-Making}
+
+The SPARQL knowledge graph enables four categories of engineering query that are not available from a purely geometric retrieval system.
+Table~\ref{tab:SPARQL} summarises example SPARQL queries and their expected output sizes.
+The per-family retrieval breakdown (Figure~\ref{Fig:PerFamily}) shows that topo\_complex assemblies achieve Hybrid MRR = 0.6509, while topo\_moderate assemblies achieve only 0.5375; this variation reflects the boundary overlap between adjacent quintile groups and provides engineers with realistic expectations for retrieval quality by assembly class.
+The failure case analysis (Figure~\ref{Fig:PerFamily}, right panel) identifies the most common failure pattern as topo\_complex $\leftrightarrow$ topo\_connected confusion (assemblies at the boundary of the top two quintiles), which suggests that finer-grained contact topology features could improve discrimination.
+Together, the SPARQL layer, per-family breakdown, and explainability traces provide a decision-support layer that transforms the numeric similarity system into an auditable engineering tool.
+
+\begin{table}[!ht]
+\centering
+\caption{Example SPARQL query capabilities enabled by the OWL ontology. Each query is answerable directly from the knowledge graph without re-running the retrieval pipeline.}
+\label{tab:SPARQL}
+\begin{tabular}{lll}
+\toprule
+\textbf{Query type} & \textbf{Example} & \textbf{Output} \\
+\midrule
+Material filter & All Steel assemblies & 147 assemblies \\
+Topology filter & All TopoIsolated assemblies & 128 assemblies \\
+Combined filter & Steel + TopoIsolated & Intersection subset \\
+Complexity filter & Low-complexity Steel assemblies & Filtered subset \\
+Explainability trace & $\alpha{\cdot}S_{\text{tech}} + \beta{\cdot}S_{\text{sem}}$ per candidate & Per-query score breakdown \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[!ht]
+\centerline{\includegraphics[width=17.8cm]{./Figures/per_family_and_failures.pdf}}
+\caption{Left: Per-family P@5 and MRR for the Hybrid, Technical, and Semantic methods across five topology families. topo\_complex assemblies achieve the highest retrieval performance across all methods; topo\_moderate shows the lowest, consistent with boundary overlap in the contact-topology quintile partition. Right: Failure case analysis showing the most frequent confusion patterns in Hybrid rank-1 retrievals — topo\_complex/topo\_connected boundary confusion accounts for the majority of rank-1 failures.}
+\label{Fig:PerFamily}
+\end{figure*}
+
+
+%%=============================================================
+\section{Discussion}
+%%=============================================================
+
+The central finding of this study is that a hybrid combination of geometric and ontology-semantic features achieves statistically significant improvement over all single-domain baselines on MRR (Hybrid MRR = 0.5731, 95\% CI [0.5462, 0.5999], $p < 0.05$ for all pairwise Wilcoxon tests).
+This finding survives the removal of in-sample weight-selection bias: under 5-fold cross-validation the held-out MRR is 0.5726 (optimism bias 0.0005) and the held-out hybrid model still significantly outperforms every baseline (Section~\ref{sec:cv}).
+This confirms the research hypothesis that combining multiple knowledge modalities produces more accurate first-rank retrieval than any single domain alone.
+The effect sizes (Cohen's $d$ ranging from 0.038 to 0.364) span from negligible (Hybrid vs Technical) to small (Hybrid vs Random), which is consistent with the expectation for a geometrically homogeneous dataset where most assemblies share similar geometric profiles and the semantic component provides the marginal discriminating signal.
+The non-trivial improvement over the Euclidean baseline ($\Delta\text{MRR} = +0.038$, $d = 0.088$) confirms that cosine similarity on normalised geometric features is a stronger retrieval signal than raw Euclidean distance, aligning with prior findings in vector-space retrieval~\cite{Manning2008}.
+
+Regarding RQ2, the metric comparison reveals an important trade-off between MRR and P@5: the Hybrid achieves the highest MRR and P@1 (prioritising first-rank accuracy), while Technical similarity achieves marginally higher P@5 and P@10 (0.3617 vs 0.3542).
+This divergence is explained by the weight selection criterion: the grid search optimises MRR, not P@5.
+For engineering applications where the primary use case is ``find the single most similar assembly,'' the Hybrid framework is the recommended choice; for applications requiring comprehensive top-5 coverage, technical geometric similarity with equal-weight combinations may be preferred.
+The equal NDCG@10 values for Hybrid and Technical (both 0.3511) suggest that while Hybrid achieves better first-rank placement, the quality of the ranked list beyond the first position converges with pure geometric retrieval.
+
+The ablation study for RQ3 reveals that three of the four semantic features (\texttt{topology\_class}, \texttt{complexity\_class}, \texttt{structure\_class}) are derived from technical columns that are simultaneously present in the geometric feature set.
+This represents a partial semantic feature leakage that is acknowledged as a methodological limitation; the material-only ablation confirms that \texttt{material\_class} alone contributes MRR = 0.4486, and the full four-feature semantic encoding adds +0.092 MRR through the discretised technical signals.
+Future work should derive all semantic features from truly independent data sources such as functional annotations, design intent descriptors, or manufacturing process specifications.
+
+The OWL knowledge graph and SPARQL query layer (RQ4 and RQ5) represent the primary contribution beyond retrieval accuracy.
+The explainability traces demonstrate that individual retrieval decisions can be decomposed into per-component similarity contributions and verified against ontological property alignment, providing engineers with a transparent justification mechanism unavailable in purely geometric retrieval systems.
+The robustness analysis confirms that Hybrid retrieval degrades gracefully under semantic noise (MRR = 0.4713 at 50\% noise), maintaining superiority over Semantic-only throughout, which supports deployment in real-world scenarios where ontology completeness cannot be guaranteed.
+The per-family breakdown identifies topo\_complex assemblies as consistently well-retrieved (MRR = 0.6509) and topo\_moderate as the most challenging class (MRR = 0.5375), providing actionable guidance for future ontology refinement.
+
+The three evaluation pitfalls documented in this study (label leakage, zero-variance features, in-sample weight optimisation) are not specific to CAD retrieval and are likely present in other domain-specific retrieval literature where ground-truth labels are programmatically generated from feature-derived thresholds.
+The independence verification procedure (Decision Tree classifier on geometric features vs. topo\_family labels, achieving 39.4\% vs 20.0\% chance) is a reusable diagnostic tool that requires no external annotation effort and should become standard practice in dataset preparation for retrieval evaluation.
+The broader implication is that published performance figures in CAD retrieval literature should be interpreted with caution unless the evaluation protocol explicitly verifies label independence.
+
+A direct comparison with contemporary learning-based methods is limited by the absence of published baselines evaluated on the Fusion~360 Gallery dataset under the same topo\_family evaluation protocol.
+Recent deep-learning approaches operate directly on boundary representations or assembly graphs rather than on flattened feature vectors: UV-Net~\cite{Jayaraman2021} and BRepNet~\cite{Lambourne2021} learn embeddings from B-rep faces and edges, JoinABLe~\cite{Willis2022} and AutoMate~\cite{Jones2021} learn assembly joint and mating relationships, and graph similarity learning has been surveyed comprehensively by Ma et al.~\cite{Ma2021}.
+These methods typically require large labelled training sets and substantial GPU resources, and --- critically for the present argument --- they are vulnerable to exactly the evaluation circularity documented here when their ground-truth relevance is derived from the same representation used for retrieval.
+The lightweight cosine-similarity framework reported here is complementary: it provides a circular-free, statistically validated, and fully reproducible baseline against which such learned models can be measured, and the Euclidean (MRR = 0.5349) and Jaccard (MRR = 0.4244) baselines anchor the lower end of that comparison.
+Engineering knowledge graphs such as TechNet~\cite{Sarica2020} further suggest that richer, externally sourced semantic relations could strengthen the ontology layer without reintroducing geometric leakage.
+Future work comparing these graph- and embedding-based approaches against the present framework under an identical held-out, circular-free protocol would provide a complete picture of the state of the art.
+
+\subsection{Limitations}
+
+Several limitations constrain the generalisability of the findings.
+First, the dataset of 746 assemblies is geometrically homogeneous (predominantly small Steel components), which compresses absolute performance values and may mask modality differences that would emerge in a more diverse corpus.
+Second, the topo\_family labels are derived from contact topology quintiles rather than expert-validated design families, and the five groups may not correspond to categories that an engineer would recognise as meaningful design archetypes.
+Third, three of four semantic features are derived from technical columns, representing partial semantic leakage; only material\_class is a fully independent semantic signal.
+Fourth, although weight selection now uses 5-fold cross-validation with held-out evaluation (eliminating the in-sample bias of Pitfall B3, measured at only 0.0005~MRR), the cross-validation shares a single fixed candidate corpus, so the confidence intervals reflect query sampling rather than full repository resampling.
+Fifth, this study evaluates only linear weighted fusion; non-linear combination methods (attention-based fusion, graph neural networks~\cite{Ma2021}) may overcome the trade-off between MRR and P@5 observed here.
+
+\subsection{Future Directions}
+
+Several directions are identified for extending this work.
+Incorporating richer ontological semantics — functional annotations, manufacturing process descriptors, and spatial relationship graphs — would make the semantic similarity module more independent of the geometric feature domain and potentially widen the performance gap between Hybrid and Technical retrieval.
+Cross-validated weight selection (5-fold) would provide unbiased weight estimates and allow the bootstrap confidence intervals to reflect generalisation rather than in-sample optimisation.
+Evaluation on a more geometrically diverse dataset, or on assembly families with externally validated ground truth from domain experts, would strengthen the external validity of the findings.
+Graph neural network approaches that directly operate on the OWL knowledge graph structure (rather than flattening it to a feature vector) represent a promising direction for exploiting the relational structure of the ontology for similarity computation.
+Finally, deployment in an industrial CAD system with real user studies measuring retrieval relevance from an engineer's perspective would validate the practical engineering impact of the framework.
+
+
+%%=============================================================
+\section{Conclusion}
+%%=============================================================
+
+This paper presented a hybrid ontology-based similarity framework for CAD assembly retrieval, evaluated on 746 Fusion~360 assemblies under circular-free evaluation conditions.
+The primary contributions are: (1) identification and correction of three evaluation pitfalls (label leakage, zero-variance features, in-sample weight optimisation) that collectively invalidate evaluation results in CAD retrieval pipelines that do not explicitly verify label independence, with the weight-optimisation pitfall corrected through 5-fold cross-validated selection that quantifies the optimism bias at only 0.0005~MRR; (2) a hybrid weighted similarity model combining geometric and ontology-semantic features ($\alpha{=}0.90$, $\beta{=}0.10$, $\gamma{=}0.00$) that achieves an in-sample MRR = 0.5731 and a cross-validated held-out MRR = 0.5726 (95\% bootstrap CI [0.5478, 0.5999]), outperforming all single-domain baselines with statistical significance; (3) an OWL ontology encoding 4,476 RDF triples that enables SPARQL-queryable explainability for every retrieval decision; and (4) a comprehensive statistical evaluation framework including bootstrap confidence intervals and Wilcoxon signed-rank tests for six retrieval metrics across seven methods.
+The framework demonstrates that even a lightweight material ontology adds measurable and statistically defensible retrieval improvement over pure geometric similarity, while simultaneously providing the interpretability infrastructure that industrial engineering applications require.
+
+\section*{Declarations}
+
+The authors used the generative AI tool Claude (Anthropic, San Francisco, CA, USA) to assist with code implementation, figure generation, and language clarity improvements.
+All content was reviewed and edited by the authors, who take full responsibility for the final version of the manuscript.
+
+\bibliographystyle{elsarticle-num}
+\bibliography{Bibliography}
+
+\end{document}

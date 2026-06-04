@@ -1,0 +1,10 @@
+metric,value
+CV_heldout_MRR,0.5726
+CV_CI_low,0.5478
+CV_CI_high,0.5999
+in_sample_MRR,0.5731
+optimism_bias,0.0005
+folds_selecting_modal,4.0
+modal_alpha,0.9
+modal_beta,0.1
+modal_gamma,0.0

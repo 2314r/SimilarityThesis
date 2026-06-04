@@ -1,0 +1,7 @@
+Comparison,CV_Hybrid_MRR,Other_MRR,Delta_MRR,p_value,Significant,Cohen's_d
+CV-Hybrid vs Technical,0.5726,0.564,0.0086,2.53e-02,YES,0.036
+CV-Hybrid vs Semantic (Ontology),0.5726,0.5405,0.032,2.49e-02,YES,0.073
+CV-Hybrid vs Euclidean,0.5726,0.5349,0.0376,1.05e-02,YES,0.0864
+CV-Hybrid vs Structural,0.5726,0.4858,0.0868,2.01e-06,YES,0.1742
+CV-Hybrid vs Jaccard (raw),0.5726,0.4244,0.1481,2.13e-15,YES,0.3016
+CV-Hybrid vs Random,0.5726,0.392,0.1806,1.65e-20,YES,0.3629
