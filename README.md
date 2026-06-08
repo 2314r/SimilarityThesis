@@ -1,4 +1,4 @@
-# Machine Learning Algorithms for Assessing the Similarity of Variant Rotor Designs Based on Ontological Features
+# Machine Learning Algorithms for Assessing the Similarity of CAD Assembly Variants Based on Ontological Features
 
 ## Overview
 
@@ -22,9 +22,9 @@ This project implements a hybrid similarity assessment framework for CAD assembl
 
 | Feature Type | Description | Features |
 |---|---|---|
-| Technical | Geometric properties of the assembly | component_count, body_count, edge_count, face_count, vertex_count, mass, volume, geometric_complexity, complexity_ratio, rotational_symmetry |
-| Semantic | Ontology-encoded material knowledge | material one-hot encoding (Steel, Aluminum, Plastic, Brass) |
-| Structural | Assembly contact topology | n_contacts, n_holes, n_occurrences |
+| Technical | Geometric properties of the assembly | volume, edge_count, face_count, vertex_count, complexity_ratio, geometric_complexity (6 features; `surface_area` and `mass` removed — Pitfall B2: surface_area was zero-variance, mass ≈ volume with r = 0.998) |
+| Semantic | Ontology-derived categorical knowledge (one-hot encoded) | material_class (Steel, Aluminum, Plastic, Wood, Other), topology_class, complexity_class, structure_class (4 features) |
+| Structural | Assembly contact topology (used only for ablation; defines the labels, so excluded from the scored hybrid) | n_contacts, n_holes, n_occurrences |
 
 ### Hybrid Similarity Model
 
@@ -56,14 +56,15 @@ Independence verified: Decision Tree accuracy on geometric features = 39.4% vs. 
 
 | Method | P@5 | MRR |
 |---|---|---|
-| **Hybrid (α=0.90, β=0.10, γ=0.00)** | **0.354** | **0.5731** |
-| Technical only | 0.362 | 0.5640 |
-| Semantic (ontology) | 0.307 | 0.5410 |
-| Structural | 0.274 | 0.4860 |
-| Euclidean baseline | 0.336 | 0.5350 |
-| Random baseline | — | 0.3920 |
+| **Hybrid (α=0.90, β=0.10, γ=0.00)** | **0.3542** | **0.5731** |
+| Technical only | 0.3617 | 0.5640 |
+| Semantic (ontology) | 0.3070 | 0.5405 |
+| Euclidean baseline | 0.3362 | 0.5349 |
+| Structural | 0.2735 | 0.4858 |
+| Jaccard (raw material) | 0.2102 | 0.4244 |
+| Random baseline | 0.1928 | 0.3920 |
 
-Bootstrap 95% CI for Hybrid MRR: **[0.5462, 0.5999]**
+In-sample Hybrid MRR = 0.5731; cross-validated held-out MRR = **0.5726** (95% bootstrap CI **[0.5478, 0.5999]**), optimism bias = 0.0005.
 
 All pairwise comparisons (Wilcoxon signed-rank): **p < 0.05**
 
@@ -116,8 +117,8 @@ SimilarityThesis/
 │   ├── data/
 │   │   └── fusion360_independent_labels.csv   # Dataset (746 assemblies, 19 features)
 │   └── outputs/
-│       ├── figures/                   # 28 publication-quality figures
-│       ├── tables/                    # 31 result CSVs
+│       ├── figures/                   # 15 publication-quality figures (PDF)
+│       ├── tables/                    # 34 result CSVs
 │       └── assembly_ontology.owl      # OWL ontology (4,476 triples)
 └── archive/                           # Superseded notebooks and datasets
 ```
@@ -126,7 +127,7 @@ SimilarityThesis/
 
 ## Key Contribution
 
-> A hybrid ontology-based similarity framework combining geometric, semantic, and structural knowledge achieves statistically significant improvement in CAD assembly retrieval (MRR = 0.5731, 95% CI [0.5462, 0.5999]) over all single-domain baselines.
+> A hybrid ontology-based similarity framework, evaluated under leakage-free conditions with cross-validated (held-out) weight selection, achieves statistically significant improvement in CAD assembly retrieval (in-sample MRR = 0.5731; held-out MRR = 0.5726, 95% CI [0.5478, 0.5999]; optimism bias = 0.0005) over all single-domain baselines, while an OWL/SPARQL knowledge graph provides explainable, auditable retrieval. The work also documents and corrects three evaluation-circularity pitfalls (label leakage, zero-variance features, in-sample weight optimization).
 
 ---
 
