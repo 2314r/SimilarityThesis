@@ -1,0 +1,23 @@
+CODE REPOSITORY
+===============
+
+Primary analysis notebook (canonical pipeline): ThesisV10.ipynb (included in this folder)
+
+The notebook reproduces the entire study end to end:
+  1. Loads the 746-assembly Fusion 360 dataset (see ../Datasets/fusion360_independent_labels.csv)
+  2. Builds the technical, semantic, and structural cosine-similarity matrices
+  3. Performs 5-fold cross-validated hybrid weight selection (Pitfall B3 fix)
+  4. Evaluates all seven methods with bootstrap CIs and Wilcoxon tests
+  5. Constructs the OWL ontology (4,476 RDF triples) and SPARQL queries
+  6. Generates every figure (PDF) and result table (CSV) used in the paper
+
+All outputs are written to: ontology/outputs/figures/ and ontology/outputs/tables/
+
+GitHub repository:
+  >>> REPLACE THIS LINE WITH YOUR PUBLIC GITHUB URL, e.g. https://github.com/<user>/SimilarityThesis <<<
+
+Dependencies:
+  python>=3.10, numpy, pandas, scikit-learn, matplotlib, networkx, rdflib, scipy
+  pip install numpy pandas scikit-learn matplotlib networkx rdflib scipy
+
+Reproducibility: all stochastic operations use random_state / seed = 42.
